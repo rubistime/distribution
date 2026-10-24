@@ -13,6 +13,12 @@
 	compatible = "retroid,pocket-classic", "qcom,sm4450";
 	qcom,board-id = <0x22 0>;
 
+	/* Keep removable SD at mmc0; enumerate internal eMMC as mmc1. */
+	aliases {
+		mmc0 = &sdhc_2;
+		mmc1 = &sdhc_1;
+	};
+
 	/* vendor: gpios_control/mcu-3v3-enable-gpio */
 	mcu_vdd: regulator-mcu-vdd {
 		compatible = "regulator-fixed";
@@ -79,6 +85,35 @@
 		pinctrl-0 = <&panel_extvdd_en_default>;
 		pinctrl-names = "default";
 	};
+};
+
+/* Experimental: original-board eMMC supply, based on Rev Q configuration. */
+&apps_rsc {
+	regulators-1 {
+		vreg_l5e_2p95: ldo5 {
+			regulator-name = "vreg_l5e_2p95";
+			regulator-min-microvolt = <2952000>;
+			regulator-max-microvolt = <2952000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+	};
+};
+
+&sdhc_1 {
+	iommus = <&apps_smmu 0x560 0x0>;
+	dma-coherent;
+	pinctrl-0 = <&sdc1_default>;
+	pinctrl-1 = <&sdc1_sleep>;
+	pinctrl-names = "default", "sleep";
+	vmmc-supply = <&vreg_l5e_2p95>;
+	vqmmc-supply = <&vreg_l19b_1p8>;
+	mmc-ddr-1_8v;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	mmc-hs400-enhanced-strobe;
+	qcom,dll-config = <0x000f642c>;
+	qcom,ddr-config = <0x80040868>;
+	status = "okay";
 };
 
 &mdss_dsi0 {
@@ -172,6 +207,19 @@
 };
 
 &tlmm {
+	sdc1_default: sdc1-default-state {
+		clk-pins { pins = "sdc1_clk"; drive-strength = <16>; bias-disable; };
+		cmd-pins { pins = "sdc1_cmd"; drive-strength = <10>; bias-pull-up; };
+		data-pins { pins = "sdc1_data"; drive-strength = <10>; bias-pull-up; };
+		rclk-pins { pins = "sdc1_rclk"; bias-pull-down; };
+	};
+	sdc1_sleep: sdc1-sleep-state {
+		clk-pins { pins = "sdc1_clk"; drive-strength = <2>; bias-disable; };
+		cmd-pins { pins = "sdc1_cmd"; drive-strength = <2>; bias-pull-up; };
+		data-pins { pins = "sdc1_data"; drive-strength = <2>; bias-pull-up; };
+		rclk-pins { pins = "sdc1_rclk"; bias-pull-down; };
+	};
+
 	panel_vci_en_default: panel-vci-en-default-state {
 		pins = "gpio40";
 		function = "gpio";
